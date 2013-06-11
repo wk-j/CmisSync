@@ -2,7 +2,7 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
 
   <Product Name='CmisSync' Id='fb3bdb0a-3977-4477-bc53-c8c28a0ee18d' UpgradeCode='4c725498-9d2d-43bf-8966-feeace102830'
-    Language='1033' Codepage='1252' Version='0.4.4' Manufacturer='CmisSync'>
+    Language='1033' Codepage='1252' Version='0.4.17' Manufacturer='CmisSync'>
 
     <Package Id='*' Keywords='Installer' Description="CmisSync Setup" Manufacturer='CmisSync'
       InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
@@ -18,7 +18,7 @@
             </Component>
             <Component Id='Libraries' Guid='f982a0bb-824d-4835-921d-e51b47b8598b'>
               <File Id='CmisSync.Lib.dll' Name='CmisSync.Lib.dll' Source='!(wix.root)\CmisSync\Windows\bin\Debug\CmisSync.Lib.dll' DiskId='1' />
-              <File Id='DotCMIS.dll' Name='DotCMIS.dll' Source='!(wix.root)\CmisSync\Windows\bin\Debug\DotCMIS.dll' DiskId='1' />
+              <File Id='DotCMIS.dll' Name='DotCMIS.dll' Source='!(wix.root)\Extras\chemistry-dotcmis-as-of-CmisSync-0.3.9\DotCMIS.dll' DiskId='1' />
               <File Id='log4net.dll' Name='log4net.dll' Source='!(wix.root)\CmisSync\Windows\bin\Debug\log4net.dll' DiskId='1' />
               <File Id='Newtonsoft.Json.dll' Name='Newtonsoft.Json.dll' Source='!(wix.root)\CmisSync\Windows\bin\Debug\Newtonsoft.Json.dll' DiskId='1' />
               <!--<File Id='SQLite.Interop.dll' Name='SQLite.Interop.dll' Source='!(wix.root)\CmisSync\Windows\bin\Debug\SQLite.Interop.dll' DiskId='1' />-->
