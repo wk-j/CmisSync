@@ -263,96 +263,68 @@ namespace CmisSync.Lib.Sync
             private void DownloadFile(IDocument remoteDocument, string localFolder)
             {
                 activityListener.ActivityStarted();
+                DotCMIS.Data.IContentStream contentStream = remoteDocument.GetContentStream();
 
-                if (remoteDocument.ContentStreamLength == 0)
+                // If this file does not have a content stream, ignore it.
+                // Even 0 bytes files have a contentStream.
+                // null contentStream sometimes happen on IBM P8 CMIS server, not sure why.
+                if (contentStream == null)
                 {
-                    Logger.Info("CmisDirectory | Skipping download of file with null content stream: " + remoteDocument.ContentStreamFileName);
-                    activityListener.ActivityStopped();
+                    //SparkleLogger.LogInfo("Sync", "Skipping download of file with null content stream: " + remoteDocument.ContentStreamFileName);
                     return;
                 }
 
-                StreamWriter localfile = null;
-                DotCMIS.Data.IContentStream contentStream = null;
+                // Download.
+                string filePath = localFolder + Path.DirectorySeparatorChar + contentStream.FileName;
 
-                string filepath = Path.Combine(localFolder, remoteDocument.ContentStreamFileName);
-
-                // If a file exist, file is deleted.
-                if (File.Exists(filepath))
-                    File.Delete(filepath);
-
-                string tmpfilepath = filepath + ".sync";
-
-                // Download file, starting at the last download point
-                Boolean success = false;
-                try
+                // If there was previously a directory with this name, delete it.
+                // TODO warn if local changes inside the folder.
+                if (Directory.Exists(filePath))
                 {
-                    // Get the last position in the localfile. By default position 0 (Nuxeo do not support partial getContentStream #107
-                    Int64 Offset = 0;
-
-                    // Nuxeo don't support partial getContentStream
-                    if (session.RepositoryInfo.VendorName.ToLower().Contains("nuxeo"))
-                    {
-                        Logger.Warn("CmisDirectory | Nuxeo does not support partial download, so restart from zero.");
-                        localfile = new StreamWriter(tmpfilepath);
-                        contentStream = remoteDocument.GetContentStream();
-                    }
-                    else
-                    {
-                        // Create Stream with the local file in append mode, if file is empty it's like a full download (Offset 0)
-                        localfile = new StreamWriter(tmpfilepath, true);
-                        localfile.AutoFlush = true;
-                        Offset = localfile.BaseStream.Position;
-                        contentStream = remoteDocument.GetContentStream(remoteDocument.Id, Offset, remoteDocument.ContentStreamLength);
-                    }
-
-                    if (contentStream == null)
-                    {
-                        Logger.Warn("CmisDirectory | Skipping download of file with null content stream: " + remoteDocument.ContentStreamFileName);
-                        throw new IOException();
-                    }
-
-                    Logger.Info(String.Format("CmisDirectory | Start download of file with offset {0}", Offset));
-
-                    contentStream.Stream.Flush();
-                    CopyStream(contentStream.Stream, localfile.BaseStream);
-                    localfile.Flush();
-                    localfile.Close();
-                    contentStream.Stream.Close();
-                    success = true;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Fatal(String.Format("CmisDirectory | Download of file {0} abort: {1}", remoteDocument.ContentStreamFileName, ex));
-                    success = false;
-                    if (localfile != null)
-                    {
-                        localfile.Flush();
-                        localfile.Close();
-                        File.Delete(tmpfilepath);
-                    }
-                    if (contentStream != null) contentStream.Stream.Close();
+                    Directory.Delete(filePath);
                 }
 
-                try
+                bool success = false;
+                do
                 {
-                    // Rename file
-                    // TODO - Yannick - Control file integrity by using hash compare - Is it necessary ?
-                    if (success)
+                    try
                     {
-                        File.Move(tmpfilepath, filepath);
-
-                        // Get metadata.
-                        Dictionary<string, string[]> metadata = FetchMetadata(remoteDocument);
-
-                        // Create database entry for this file.
-                        database.AddFile(filepath, remoteDocument.LastModificationDate, metadata);
+                        DownloadFile(contentStream, filePath);
+                        success = true;
+                    }
+                    catch (WebException e)
+                    {
+                        //SparkleLogger.LogInfo("Sync", e.Message);
+                        //SparkleLogger.LogInfo("Sync", "Problem during download, waiting for 10 seconds...");
+                        System.Threading.Thread.Sleep(10 * 1000);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Fatal("CmisDirectory | Unable to write metadata in the CmisDatabase: " + ex.ToString());
-                }
+                while (!success);
+
+                // Get metadata.
+                Dictionary<string, string[]> metadata = FetchMetadata(remoteDocument);
+
+                // Create database entry for this file.
+                database.AddFile(filePath, remoteDocument.LastModificationDate, metadata);
                 activityListener.ActivityStopped();
+            }
+
+            /**
+             * Download a file, without retrying
+             */
+            private void DownloadFile(DotCMIS.Data.IContentStream contentStream, string filePath)
+            {
+                //SparkleLogger.LogInfo("Sync", "Downloading " + filePath);
+                Stream file = File.OpenWrite(filePath);
+                byte[] buffer = new byte[8 * 1024];
+                int len;
+                while ((len = contentStream.Stream.Read(buffer, 0, buffer.Length)) > 0) // TODO catch WebException here and retry
+                {
+                    file.Write(buffer, 0, len);
+                }
+                file.Close();
+                contentStream.Stream.Close();
+                //SparkleLogger.LogInfo("Sync", "Downloaded");
             }
 
             private void CopyStream(Stream src, Stream dst)
