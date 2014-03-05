@@ -536,6 +536,15 @@ namespace CmisSync.Lib.Cmis
         /// </summary>
         public void SetChangeLogToken(string token)
         {
+            if (token == null)
+            {
+                // This happen on Alfresco servers immediately after enabling ChangeLog and
+                // before performing any change. Probably an Alfresco or DotCMIS bug.
+                // See http://stackoverflow.com/q/22191448
+                // Converting to string to prevent https://github.com/nicolas-raoul/CmisSync/issues/320
+                token = "";
+            }
+
             string command = "INSERT OR REPLACE INTO general (key, value) VALUES (\"ChangeLogToken\", @token)";
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("token", token);
