@@ -404,7 +404,7 @@ namespace TestLibrary
                     repositoryId,
                     5000,
                     false,
-                    new DateTime(01, 01, 1900),
+                    new DateTime(1900, 01, 01),
                     true);
 
             using (CmisRepo cmis = new CmisRepo(repoInfo, activityListener))
@@ -616,10 +616,11 @@ namespace TestLibrary
 
             // Create file.
             DotCMIS.Enums.VersioningState? state = null;
-            if (true != session.RepositoryInfo.Capabilities.IsAllVersionsSearchableSupported)
+            // In Alfresco, this statement causes a "Conflict" response.
+            /* if (true != session.RepositoryInfo.Capabilities.IsAllVersionsSearchableSupported)
             {
                 state = DotCMIS.Enums.VersioningState.None;
-            }
+            } */
             session.CreateDocument(properties, root, contentStream, state);
 
             // Check whether file is present.
