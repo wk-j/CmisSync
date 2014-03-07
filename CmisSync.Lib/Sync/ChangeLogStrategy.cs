@@ -104,32 +104,17 @@ namespace CmisSync.Lib.Sync
 
                     // Case when an object has been deleted.
                     case ChangeType.Deleted:
-                        cmisObject = session.GetObject(change.ObjectId);
-                        if (null != (remoteDocument = cmisObject as IDocument))
-                        {
-                            string remoteDocumentPath = remoteDocument.Paths.First();
-                            if (!remoteDocumentPath.StartsWith(remoteFolderPath))
-                            {
-                                Logger.Info("Sync | Change in unrelated document: " + remoteDocumentPath);
-                                break; // The change is not under the folder we care about.
-                            }
-                            string relativePath = remoteDocumentPath.Substring(remoteFolderPath.Length + 1);
-                            string relativeFolderPath = Path.GetDirectoryName(relativePath);
-                            relativeFolderPath = relativeFolderPath.Replace('/', '\\'); // TODO OS-specific separator
-                            string localFolderPath = Path.Combine(repoinfo.TargetDirectory, relativeFolderPath);
-                            // TODO DeleteFile(localFolderPath); // Delete on filesystem and in database
-                        }
-                        else if (null != (remoteFolder = cmisObject as IFolder))
-                        {
-                            string localFolder = Path.Combine(repoinfo.TargetDirectory, remoteFolder.Path);
-                            if(!this.repoinfo.isPathIgnored(remoteFolder.Path))
-                                RemoveFolderLocally(localFolder); // Remove from filesystem and database.
-                        }
+                        // Find in the local database what file/folder has this id.
+                        // TODO
+                        // Delete it locally and from the database.
+                        // TODO
+                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
                         break;
 
                     // Case when access control or security policy has changed.
                     case ChangeType.Security:
                         // TODO
+                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
                         break;
 
                     default:
