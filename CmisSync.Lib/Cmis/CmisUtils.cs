@@ -180,7 +180,15 @@ namespace CmisSync.Lib.Cmis
             // Populate the result list with identifier and name of each repository.
             foreach (IRepository repo in repositories)
             {
-                result.Add(repo.Id, repo.Name);
+                // Name appears in the UI so it must be a visible string.
+                string name = repo.Name;
+                if (String.IsNullOrWhiteSpace(name))
+                {
+                    name = repo.Id;
+                }
+
+                // Add this repo.
+                result.Add(repo.Id, name);
             }
 
             return result;

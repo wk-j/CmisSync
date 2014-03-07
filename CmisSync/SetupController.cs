@@ -252,25 +252,6 @@ namespace CmisSync
 
 
         /// <summary>
-        /// Load repositories information from a CMIS endpoint.
-        /// </summary>
-        static public Tuple<CmisServer, Exception> GetRepositoriesFuzzy(string url, string user, string password)
-        {
-            Uri uri;
-            try
-            {
-                uri = new Uri(url);
-                return CmisUtils.GetRepositoriesFuzzy(uri, user, password);
-            }
-            catch (Exception e)
-            {
-                return new Tuple<CmisServer, Exception>(null, e);
-            }
-
-        }
-
-
-        /// <summary>
         /// Get the list of subfolders contained in a CMIS folder.
         /// </summary>
         static public string[] GetSubfolders(string repositoryId, string path,

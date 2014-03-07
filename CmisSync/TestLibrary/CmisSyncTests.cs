@@ -680,6 +680,32 @@ namespace TestLibrary
         }
 
 
+        [Test, TestCaseSource("TestServers")]
+        public void DotCMISListRoot(string canonical_name, string localPath, string remoteFolderPath,
+            string url, string user, string password, string repositoryId)
+        {
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
+
+            parameters[SessionParameter.BindingType] = BindingType.AtomPub;
+            parameters[SessionParameter.AtomPubUrl] = url;
+            parameters[SessionParameter.User] = user;
+            parameters[SessionParameter.Password] = password;
+            parameters[SessionParameter.RepositoryId] = repositoryId;
+
+            SessionFactory factory = SessionFactory.NewInstance();
+            ISession session = factory.CreateSession(parameters);
+
+            /// get the root folder
+            IFolder rootFolder = session.GetRootFolder();
+
+            // list all children
+            foreach (ICmisObject cmisObject in rootFolder.GetChildren())
+            {
+                Console.WriteLine(cmisObject.Name);
+            }
+        }
+
+
         [Test, TestCaseSource("TestServersFuzzy")]
         public void GetRepositoriesFuzzy(string url, string user, string password)
         {
