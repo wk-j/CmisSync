@@ -126,20 +126,20 @@ namespace CmisSync.Lib.Cmis
                     {
                         string command =
                             @"CREATE TABLE files (
-                            path TEXT PRIMARY KEY NOT NULL,
-                            id TEXT UNIQUE NOT NULL,
-                            serverSideModificationDate DATE NOT NULL,
-                            metadata TEXT NOT NULL,
-                            checksum TEXT NOT NULL);   /* Checksum of both data and metadata */
-                        CREATE TABLE folders (
-                            path TEXT PRIMARY KEY NOT NULL,
-                            id TEXT UNIQUE NOT NULL,
-                            serverSideModificationDate DATE NOT NULL,
-                            metadata TEXT NOT NULL,
-                            checksum TEXT NOT NULL);   /* Checksum of metadata */
-                        CREATE TABLE general (
-                            key TEXT PRIMARY KEY NOT NULL,
-                            value TEXT);";    /* Other data such as ChangeLog token */
+                                path TEXT PRIMARY KEY NOT NULL,
+                                id TEXT UNIQUE NOT NULL,
+                                serverSideModificationDate DATE NOT NULL,
+                                metadata TEXT NOT NULL,
+                                checksum TEXT NOT NULL);   /* Checksum of both data and metadata */
+                            CREATE TABLE folders (
+                                path TEXT PRIMARY KEY NOT NULL,
+                                id TEXT UNIQUE NOT NULL,
+                                serverSideModificationDate DATE NOT NULL,
+                                metadata TEXT NOT NULL,
+                                checksum TEXT NOT NULL);   /* Checksum of metadata */
+                            CREATE TABLE general (
+                                key TEXT PRIMARY KEY NOT NULL,
+                                value TEXT);";    /* Other data such as ChangeLog token */
                         ExecuteSQLAction(command, null);
                         Logger.Info("Database created");
                     }
