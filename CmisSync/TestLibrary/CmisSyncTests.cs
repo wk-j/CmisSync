@@ -695,7 +695,7 @@ namespace TestLibrary
             SessionFactory factory = SessionFactory.NewInstance();
             ISession session = factory.CreateSession(parameters);
 
-            /// get the root folder
+            // get the root folder
             IFolder rootFolder = session.GetRootFolder();
 
             // list all children
@@ -703,6 +703,52 @@ namespace TestLibrary
             {
                 Console.WriteLine(cmisObject.Name);
             }
+        }
+
+
+        [Test, TestCaseSource("TestServers")]
+        public void DotCMISLatestChangeLog(string canonical_name, string localPath, string remoteFolderPath,
+            string url, string user, string password, string repositoryId)
+        {
+            Dictionary<string, string> parameters = new Dictionary<string, string>();
+
+            parameters[SessionParameter.BindingType] = BindingType.AtomPub;
+            parameters[SessionParameter.AtomPubUrl] = url;
+            parameters[SessionParameter.User] = user;
+            parameters[SessionParameter.Password] = password;
+            parameters[SessionParameter.RepositoryId] = repositoryId;
+
+            SessionFactory factory = SessionFactory.NewInstance();
+            ISession session = factory.CreateSession(parameters);
+
+            string token1 = session.Binding.GetRepositoryService().GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
+
+            CreateRandomDocumentAtRepositoryRoot(session);
+
+            string token2 = session.Binding.GetRepositoryService().GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
+
+            // Assert.AreNotEqual(token1, token2);    Fails because token1 equals token2.
+
+            session.Clear();
+
+            string token3 = session.Binding.GetRepositoryService().GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
+
+            Assert.AreNotEqual(token1, token3);
+        }
+
+        private void CreateRandomDocumentAtRepositoryRoot(ISession session)
+        {
+            int random = new Random().Next();
+            IDictionary<string, object> properties = new Dictionary<string, object>();
+            properties[PropertyIds.Name] = "Hello World Document " + random;
+            properties[PropertyIds.ObjectTypeId] = "cmis:document";
+            byte[] content = UTF8Encoding.UTF8.GetBytes("Hello World!");
+            ContentStream contentStream = new ContentStream();
+            contentStream.FileName = "hello-world-" + random + ".txt";
+            contentStream.MimeType = "text/plain";
+            contentStream.Length = content.Length;
+            contentStream.Stream = new MemoryStream(content);
+            session.GetRootFolder().CreateDocument(properties, contentStream, null);
         }
 
 
