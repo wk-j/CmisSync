@@ -35,6 +35,13 @@ namespace CmisSync.Lib.Cmis
 
 
         /// <summary>
+        /// Version of the database schema.
+        /// Increment whenever a column is added.
+        /// </summary>
+        public static int DatabaseVersion = 1;
+
+
+        /// <summary>
         /// Name of the SQLite database file.
         /// </summary>
         private string databaseFileName;
@@ -139,8 +146,16 @@ namespace CmisSync.Lib.Cmis
                                 checksum TEXT NOT NULL);   /* Checksum of metadata */
                             CREATE TABLE general (
                                 key TEXT PRIMARY KEY NOT NULL,
-                                value TEXT);";    /* Other data such as ChangeLog token */
-                        ExecuteSQLAction(command, null);
+                                value TEXT);    /* Other data such as ChangeLog token */
+                            INSERT INTO general
+                                (key, value)
+                                VALUES
+                                (""DatabaseVersion"", @DatabaseVersion);";
+
+                        Dictionary<string, object> parameters = new Dictionary<string, object>();
+                        parameters.Add("DatabaseVersion", DatabaseVersion.ToString());
+
+                        ExecuteSQLAction(command, parameters);
                         Logger.Info("Database created");
                     }
                 }
@@ -222,20 +237,10 @@ namespace CmisSync.Lib.Cmis
         //
 
         /// <summary>
-        /// Add a file to the database. And calculate the checksum of the file
-        /// </summary>
-        [Obsolete("Adding a file without a filehash could produce wrong behaviour, please use AddFile(string path, DateTime? serverSideModificationDate, Dictionary<string, string[]> metadata, byte[] filehash) instead")]
-        public void AddFile(string path, DateTime? serverSideModificationDate,
-            Dictionary<string, string[]> metadata)
-        {
-            AddFile(path, serverSideModificationDate, metadata, null);
-        }
-
-        /// <summary>
         /// Add a file to the database.
         /// If checksum is not null, it will be used for the database entry
         /// </summary>
-        public void AddFile(string path, DateTime? serverSideModificationDate,
+        public void AddFile(string path, string id, DateTime? serverSideModificationDate,
             Dictionary<string, string[]> metadata, byte[] filehash)
         {
             Logger.Debug("Starting database file addition for file: " + path);
@@ -270,10 +275,11 @@ namespace CmisSync.Lib.Cmis
 
             // Insert into database.
             string command =
-                @"INSERT OR REPLACE INTO files (path, serverSideModificationDate, metadata, checksum)
-                    VALUES (@path, @serverSideModificationDate, @metadata, @checksum)";
+                @"INSERT OR REPLACE INTO files (path, id, serverSideModificationDate, metadata, checksum)
+                    VALUES (@path, @id, @serverSideModificationDate, @metadata, @checksum)";
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("path", normalizedPath);
+            parameters.Add("id", id);
             parameters.Add("serverSideModificationDate", serverSideModificationDate);
             parameters.Add("metadata", Json(metadata));
             parameters.Add("checksum", checksum);
@@ -285,7 +291,7 @@ namespace CmisSync.Lib.Cmis
         /// <summary>
         /// Add a folder to the database.
         /// </summary>
-        public void AddFolder(string path, DateTime? serverSideModificationDate)
+        public void AddFolder(string path, string id, DateTime? serverSideModificationDate)
         {
             // Make sure that the modification date is always UTC, because sqlite has no concept of Time-Zones
             // See http://www.sqlite.org/datatype3.html
@@ -296,10 +302,11 @@ namespace CmisSync.Lib.Cmis
             path = Normalize(path);
 
             string command =
-                @"INSERT OR REPLACE INTO folders (path, serverSideModificationDate)
-                    VALUES (@path, @serverSideModificationDate)";
+                @"INSERT OR REPLACE INTO folders (path, id, serverSideModificationDate)
+                    VALUES (@path, @id, @serverSideModificationDate)";
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("path", path);
+            parameters.Add("id", id);
             parameters.Add("serverSideModificationDate", serverSideModificationDate);
             ExecuteSQLAction(command, parameters);
         }

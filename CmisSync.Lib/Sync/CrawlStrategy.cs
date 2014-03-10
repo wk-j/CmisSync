@@ -184,7 +184,7 @@ namespace CmisSync.Lib.Sync
 
                                     // Create database entry for this folder.
                                     // TODO - Yannick - Add metadata
-                                    database.AddFolder(localSubFolder, remoteSubFolder.LastModificationDate);
+                                    database.AddFolder(localSubFolder, remoteSubFolder.Id, remoteSubFolder.LastModificationDate);
                                     Logger.Info("Added folder to database: " + localSubFolder);
 
                                     // Recursive copy of the whole folder.

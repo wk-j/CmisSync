@@ -590,7 +590,7 @@ namespace CmisSync.Lib.Sync
                 }
 
                 // Create database entry for this folder
-                database.AddFolder(localFolder, remoteFolder.LastModificationDate);
+                database.AddFolder(localFolder, remoteFolder.Id, remoteFolder.LastModificationDate);
                 Logger.Info("Added folder to database: " + localFolder);
 
                 // Recurse into folder.
@@ -705,7 +705,7 @@ namespace CmisSync.Lib.Sync
                         }
 
                         // Create database entry for this file.
-                        database.AddFile(filepath, remoteDocument.LastModificationDate, metadata, filehash);
+                        database.AddFile(filepath, remoteDocument.Id, remoteDocument.LastModificationDate, metadata, filehash);
                         Logger.Info("Added file to database: " + filepath);
                     }
                     return success;
@@ -786,7 +786,7 @@ namespace CmisSync.Lib.Sync
                     Dictionary<string, string[]> metadata = metadata = FetchMetadata(remoteDocument);
 
                     // Create database entry for this file.
-                    database.AddFile(filePath, remoteDocument.LastModificationDate, metadata, filehash);
+                    database.AddFile(filePath, remoteDocument.Id, remoteDocument.LastModificationDate, metadata, filehash);
                     Logger.Info("Added file to database: " + filePath);
                     return true;
                 }
@@ -817,7 +817,7 @@ namespace CmisSync.Lib.Sync
                     folder = remoteBaseFolder.CreateFolder(properties);
 
                     // Create database entry for this folder
-                    database.AddFolder(localFolder, folder.LastModificationDate);
+                    database.AddFolder(localFolder, folder.Id, folder.LastModificationDate);
                     Logger.Info("Added folder to database: " + localFolder);
                 }
                 catch (CmisBaseException e)
