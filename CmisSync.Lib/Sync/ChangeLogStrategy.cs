@@ -20,6 +20,7 @@ namespace CmisSync.Lib.Sync
             private void ChangeLogSync(IFolder remoteFolder)
             {
                 // Get last ChangeLog token on server side.
+                session.Clear(); // Needed because DotCMIS keeps token in cache.
                 string lastTokenOnServer = session.Binding.GetRepositoryService().GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
 
                 // Get last ChangeLog token that had been saved on client side.
@@ -61,6 +62,7 @@ namespace CmisSync.Lib.Sync
                     }
 
                     // Upload local changes by comparing with database.
+                    // (or let ChangeMonitor do it, and run CrawlStrategy once in a while to make sure?)
                     // TODO
                 }
             }
@@ -71,21 +73,31 @@ namespace CmisSync.Lib.Sync
             /// </summary>
             private void ApplyRemoteChange(IChangeEvent change)
             {
-                Logger.Info("Sync | Change type:" + change.ChangeType.ToString() + " id:" + change.ObjectId + " properties:" + change.Properties);
+                Logger.Info("Sync | Change type:" + change.ChangeType.ToString() + " id:" + change.ObjectId);
                 IFolder remoteFolder;
                 IDocument remoteDocument;
                 switch (change.ChangeType)
                 {
-                    // Case when an object has been created or updated.
+                    // Case when an object has been created.
                     case ChangeType.Created:
+                        // TODO
+                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
+                        break;
+
+                    // Case when an object has been updated.
                     case ChangeType.Updated:
                         ICmisObject cmisObject = session.GetObject(change.ObjectId);
                         if (null != (remoteDocument = cmisObject as IDocument))
                         {
+                            if (remoteDocument.Paths.Count == 0)
+                            {
+                                Logger.Info("Sync | Change in non-fileable object: " + remoteDocument.ContentStreamFileName + " (" + remoteDocument.ContentStreamMimeType + ")");
+                                break;
+                            }
                             string remoteDocumentPath = remoteDocument.Paths.First();
                             if (!remoteDocumentPath.StartsWith(remoteFolderPath))
                             {
-                                Logger.Info("Sync | Change in unrelated document: " + remoteDocumentPath);
+                                Logger.Info("Sync | Change in unrelated object: " + remoteDocumentPath);
                                 break; // The change is not under the folder we care about.
                             }
                             string relativePath = remoteDocumentPath.Substring(remoteFolderPath.Length + 1);
