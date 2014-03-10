@@ -351,6 +351,30 @@ namespace CmisSync.Lib.Cmis
             ExecuteSQLAction("DELETE FROM files WHERE path LIKE @path", parameters);
         }
 
+
+        public string RemoveId(string id)
+        {
+            Dictionary<string, object> parameters = new Dictionary<string, object>();
+            parameters.Add("id", id);
+
+            // Search among files.
+            string path = (string)ExecuteSQLFunction("SELECT path FROM files WHERE id=@id", parameters);
+            if (path != null)
+            {
+                RemoveFile(path);
+            }
+            else
+            {
+                // Search among folders.
+                path = (string)ExecuteSQLFunction("SELECT path FROM folders WHERE id=@id", parameters);
+                if (path != null)
+                {
+                    RemoveFolder(path);
+                }
+            }
+            return path;
+        }
+
         /// <summary>
         /// Move a file.
         /// </summary>

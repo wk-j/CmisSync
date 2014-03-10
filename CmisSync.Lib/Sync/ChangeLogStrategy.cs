@@ -80,8 +80,8 @@ namespace CmisSync.Lib.Sync
                 {
                     // Case when an object has been created.
                     case ChangeType.Created:
-                        // TODO
-                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
+                        // It seems that all created objects receive a subsequent update (at least with Alfresco), so even without implementing this case creation works.
+                        Logger.Warn("Sync | Not applied because change not implemented:" + change.ChangeType);
                         break;
 
                     // Case when an object has been updated.
@@ -116,21 +116,47 @@ namespace CmisSync.Lib.Sync
 
                     // Case when an object has been deleted.
                     case ChangeType.Deleted:
-                        // Find in the local database what file/folder has this id.
-                        // TODO
-                        // Delete it locally and from the database.
-                        // TODO
-                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
+                        Logger.Info("Sync | Deleting locally because deleted on remote server: " + change.ObjectId);
+
+                        string id = change.ObjectId;
+
+                        // Possible bug in Alfresco, see http://stackoverflow.com/q/22294589
+                        if (id.Contains("workspace://SpacesStore/"))
+                        {
+                            id = id.Substring("workspace://SpacesStore/".Length);
+                        }
+
+                        // In the local database, find and remove the file/folder that has this id.
+                        string path = database.RemoveId(id);
+
+                        if (path == null)
+                        {
+                            Logger.Error("Sync | Not deleting because no file/folder found with this object id: " + change.ObjectId);
+                        }
+
+                        // Delete the file/folder from the local filesystem.
+                        /*remoteFolderPath = 
+                        try
+                        {
+                            Logger.Info("Removing remotely deleted folder: " + folderPath);
+                            Directory.Delete(folderPath, true);
+                        }
+                        catch (Exception e)
+                        {
+                            ProcessRecoverableException("Could not delete tree:" + folderPath, e);
+                            return false;
+                        }*/
+                        
                         break;
 
                     // Case when access control or security policy has changed.
                     case ChangeType.Security:
                         // TODO
-                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
+                        Logger.Warn("Sync | Not applied because change not implemented: " + change.ChangeType);
                         break;
 
                     default:
-                        Logger.Warn("Not applied because change not implemented:" + change.ChangeType);
+                        Logger.Warn("Sync | Not applied because change not implemented: " + change.ChangeType);
                         break;
                 }
             }
