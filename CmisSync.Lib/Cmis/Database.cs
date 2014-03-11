@@ -319,6 +319,17 @@ namespace CmisSync.Lib.Cmis
         {
             path = Normalize(path);
 
+            RemoveFileNormalized(path);
+        }
+
+
+        /// <summary>
+        /// Remove a file from the database, identified by a normalized path.
+        /// </summary>
+        public void RemoveFileNormalized(string path)
+        {
+            path = Normalize(path);
+
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("path", path);
             ExecuteSQLAction("DELETE FROM files WHERE path=@path", parameters);
@@ -332,6 +343,15 @@ namespace CmisSync.Lib.Cmis
         {
             path = Normalize(path);
 
+            RemoveFolderNormalized(path);
+        }
+
+
+        /// <summary>
+        /// Remove a folder from the database.
+        /// </summary>
+        public void RemoveFolderNormalized(string path)
+        {
             Dictionary<string, object> parameters = new Dictionary<string,object>();
             // Remove folder itself
             // ExecuteSQLAction("DELETE FROM folders WHERE path='" + path + "'", null);
@@ -361,7 +381,7 @@ namespace CmisSync.Lib.Cmis
             string path = (string)ExecuteSQLFunction("SELECT path FROM files WHERE id=@id", parameters);
             if (path != null)
             {
-                RemoveFile(path);
+                RemoveFileNormalized(path);
             }
             else
             {
@@ -369,7 +389,7 @@ namespace CmisSync.Lib.Cmis
                 path = (string)ExecuteSQLFunction("SELECT path FROM folders WHERE id=@id", parameters);
                 if (path != null)
                 {
-                    RemoveFolder(path);
+                    RemoveFolderNormalized(path);
                 }
             }
             return path;
