@@ -566,9 +566,17 @@ namespace CmisSync.Lib.Sync
             /// <summary>
             /// Download a single folder from the CMIS server.
             /// </summary>
-            private bool DownloadDirectory(IFolder remoteFolder, string localFolder)
+            private void DownloadDirectory(IFolder remoteFolder, string localFolder)
             {
                 SleepWhileSuspended();
+
+                // Skip if invalid folder name. See https://github.com/nicolas-raoul/CmisSync/issues/196
+                if (Utils.IsInvalidFileName(remoteFolder.Name))
+                {
+                    Logger.Info("Skipping download of file with illegal filename: " + remoteFolder.Name);
+                    return;
+                }
+
                 try
                 {
                     // Create local folder.
@@ -586,7 +594,7 @@ namespace CmisSync.Lib.Sync
                 catch (Exception e)
                 {
                     ProcessRecoverableException("Could not create directory: " + localFolder, e);
-                    return false;
+                    return;
                 }
 
                 // Create database entry for this folder
@@ -595,8 +603,6 @@ namespace CmisSync.Lib.Sync
 
                 // Recurse into folder.
                 RecursiveFolderCopy(remoteFolder, localFolder);
-
-                return true;
             }
 
 

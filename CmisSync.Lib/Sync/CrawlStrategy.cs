@@ -172,7 +172,7 @@ namespace CmisSync.Lib.Sync
                             }
                             else
                             {
-                                if (Utils.IsInvalidFileName(remoteSubFolder.Name))
+                                if (Utils.IsInvalidFolderName(remoteSubFolder.Name))
                                 {
                                     Logger.Warn("Skipping remote folder with name invalid on local filesystem: " + remoteSubFolder.Name);
                                 }
