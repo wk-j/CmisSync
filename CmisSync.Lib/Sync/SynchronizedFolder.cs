@@ -348,7 +348,7 @@ namespace CmisSync.Lib.Sync
                         if (ChangeLogCapability)
                         {
                             // ChangeLog sync...
-                            ChangeLogSync(remoteFolder);
+                            ChangeLogSync(remoteFolder, localFolder);
                             WatcherSync(remoteFolderPath, localFolder);
                         }
                         else

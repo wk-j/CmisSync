@@ -95,6 +95,18 @@ namespace CmisSync.Lib
 
 
         /// <summary>
+        /// Whether a path is a directory.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns>false if file or if does not exist.</returns>
+        public static bool IsDirectory(string path)
+        {
+            FileAttributes attr = File.GetAttributes(path);
+            return (attr & FileAttributes.Directory) == FileAttributes.Directory;
+        }
+
+
+        /// <summary>
         /// Names of files that must be excluded from synchronization.
         /// </summary>
         private static HashSet<String> ignoredFilenames = new HashSet<String>{

@@ -2,6 +2,7 @@ using DotCMIS.Client;
 using DotCMIS.Enums;
 using System.IO;
 using System.Linq;
+using System;
 
 
 namespace CmisSync.Lib.Sync
@@ -17,7 +18,7 @@ namespace CmisSync.Lib.Sync
             /// Synchronize using the ChangeLog feature of CMIS.
             /// Not all CMIS servers support this feature, so sometimes CrawlStrategy is used instead.
             /// </summary>
-            private void ChangeLogSync(IFolder remoteFolder)
+            private void ChangeLogSync(IFolder remoteFolder, string localFolder)
             {
                 // Get last ChangeLog token on server side.
                 session.Clear(); // Needed because DotCMIS keeps token in cache.
@@ -30,7 +31,7 @@ namespace CmisSync.Lib.Sync
                 if (lastTokenOnClient == null)
                 {
                     // Token is null, which means no sync has ever happened yet, so just copy everything.
-                    RecursiveFolderCopy(remoteFolder, repoinfo.TargetDirectory);
+                    RecursiveFolderCopy(remoteFolder, repoinfo.TargetDirectory); // TODO use localFolder instead of repoinfo.TargetDirectory ?
 
                     // Update ChangeLog token.
                     Logger.Info("Sync | Updating ChangeLog token: " + lastTokenOnServer);
@@ -52,7 +53,7 @@ namespace CmisSync.Lib.Sync
                         // Replicate each change to the local side.
                         foreach (IChangeEvent change in changes.ChangeEventList)
                         {
-                            ApplyRemoteChange(change);
+                            ApplyRemoteChange(change, localFolder);
                         }
 
                         // Save ChangeLog token locally.
@@ -71,7 +72,7 @@ namespace CmisSync.Lib.Sync
             /// <summary>
             /// Apply a remote change.
             /// </summary>
-            private void ApplyRemoteChange(IChangeEvent change)
+            private void ApplyRemoteChange(IChangeEvent change, string repoFolder)
             {
                 Logger.Info("Sync | Change type:" + change.ChangeType.ToString() + " id:" + change.ObjectId);
                 IFolder remoteFolder;
@@ -103,7 +104,7 @@ namespace CmisSync.Lib.Sync
                             string relativePath = remoteDocumentPath.Substring(remoteFolderPath.Length + 1);
                             string relativeFolderPath = Path.GetDirectoryName(relativePath);
                             relativeFolderPath = relativeFolderPath.Replace('/', '\\'); // TODO OS-specific separator
-                            string localFolderPath = Path.Combine(repoinfo.TargetDirectory, relativeFolderPath);
+                            string localFolderPath = Path.Combine(repoinfo.TargetDirectory, relativeFolderPath); // TODO use localFolder instead of repoinfo.TargetDirectory ?
                             DownloadFile(remoteDocument, localFolderPath);
                         }
                         else if (null != (remoteFolder = cmisObject as IFolder))
@@ -133,19 +134,39 @@ namespace CmisSync.Lib.Sync
                         {
                             Logger.Error("Sync | Not deleting because no file/folder found with this object id: " + change.ObjectId);
                         }
+                        else
+                        {
+                            // Delete the file/folder from the local filesystem.
+                            //string relativeFolderPath = Path.GetDirectoryName(remoteDocumentPath);
+                            string unescapedPath = path.Replace('/', '\\'); // TODO OS-specific separator
+                            unescapedPath = unescapedPath.Substring(repoinfo.Name.Length + 1);
+                            string absolutePath = Path.Combine(repoinfo.TargetDirectory, unescapedPath); // TODO use localFolder instead of repoinfo.TargetDirectory ?
 
-                        // Delete the file/folder from the local filesystem.
-                        /*remoteFolderPath = 
-                        try
-                        {
-                            Logger.Info("Removing remotely deleted folder: " + folderPath);
-                            Directory.Delete(folderPath, true);
+                            if (Utils.IsDirectory(absolutePath))
+                            {
+                                try
+                                {
+                                    Logger.Info("Removing remotely deleted folder recursively: " + absolutePath);
+                                    Directory.Delete(absolutePath, true);
+                                }
+                                catch (Exception e)
+                                {
+                                    ProcessRecoverableException("Could not delete folder recursively:" + absolutePath, e);
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    Logger.Info("Removing remotely deleted file: " + absolutePath);
+                                    File.Delete(absolutePath);
+                                }
+                                catch (Exception e)
+                                {
+                                    ProcessRecoverableException("Could not delete file:" + absolutePath, e);
+                                }
+                            }
                         }
-                        catch (Exception e)
-                        {
-                            ProcessRecoverableException("Could not delete tree:" + folderPath, e);
-                            return false;
-                        }*/
                         
                         break;
 
