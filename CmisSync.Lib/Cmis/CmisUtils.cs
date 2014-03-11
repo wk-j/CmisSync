@@ -398,5 +398,17 @@ namespace CmisSync.Lib.Cmis
                 }
             }
         }
+
+
+        /// <summary>
+        /// Get the latest ChangeLog token from the server.
+        /// </summary>
+        static public string GetChangeLogToken(ISession session)
+        {
+            session.Clear(); // Needed because DotCMIS keeps token in cache.
+
+            return session.Binding.GetRepositoryService()
+                .GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
+        }
     }
 }

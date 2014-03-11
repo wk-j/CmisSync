@@ -3,6 +3,7 @@ using DotCMIS.Enums;
 using System.IO;
 using System.Linq;
 using System;
+using CmisSync.Lib.Cmis;
 
 
 namespace CmisSync.Lib.Sync
@@ -21,8 +22,7 @@ namespace CmisSync.Lib.Sync
             private void ChangeLogSync(IFolder remoteFolder, string localFolder)
             {
                 // Get last ChangeLog token on server side.
-                session.Clear(); // Needed because DotCMIS keeps token in cache.
-                string lastTokenOnServer = session.Binding.GetRepositoryService().GetRepositoryInfo(session.RepositoryInfo.Id, null).LatestChangeLogToken;
+                string lastTokenOnServer = CmisUtils.GetChangeLogToken(session);
 
                 // Get last ChangeLog token that had been saved on client side.
                 // TODO catch exception invalidArgument which means that changelog has been truncated and this token is not found anymore.

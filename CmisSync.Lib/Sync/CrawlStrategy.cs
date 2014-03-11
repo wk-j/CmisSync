@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
 using DotCMIS.Client.Impl;
+using CmisSync.Lib.Cmis;
 
 
 namespace CmisSync.Lib.Sync
@@ -67,6 +68,8 @@ namespace CmisSync.Lib.Sync
                 IList remoteFiles = new ArrayList();
                 IList remoteSubfolders = new ArrayList();
 
+                string changeLogTokenBeforeCrawl = CmisUtils.GetChangeLogToken(session);
+
                 try
                 {
                     // Crawl remote children.
@@ -80,6 +83,9 @@ namespace CmisSync.Lib.Sync
                     // Crawl local folders.
                     // Logger.LogInfo("Sync", String.Format("Crawl local folder {0}", localFolder));
                     CrawlLocalFolders(localFolder, remoteFolder, remoteSubfolders);
+
+                    // The crawl sync has been successful, so we can update the ChangeLog token.
+                    database.SetChangeLogToken(changeLogTokenBeforeCrawl);
                 }
                 catch (CmisBaseException e)
                 {
