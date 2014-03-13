@@ -652,13 +652,13 @@ namespace CmisSync.Lib.Sync
                         // null contentStream sometimes happen on IBM P8 CMIS server, not sure why.
                         if (contentStream == null)
                         {
-                            Logger.Warn("Skipping download of file with null content stream: " + fileName);
+                            Logger.Warn("Null content stream, creating an empty file: " + fileName);
                             return true;
                         }
                         // Skip downloading the content, just go on with an empty file
                         if (remoteDocument.ContentStreamLength == 0)
                         {
-                            Logger.Info("Skipping download of file with content length zero: " + fileName);
+                            Logger.Info("Content length zero, creating an empty file: " + fileName);
                             using (FileStream s = File.Create(tmpfilepath))
                             {
                                 s.Close();
