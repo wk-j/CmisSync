@@ -318,7 +318,6 @@ namespace CmisSync.Lib.Cmis
         public void RemoveFile(string path)
         {
             path = Normalize(path);
-
             RemoveFileNormalized(path);
         }
 
@@ -328,8 +327,6 @@ namespace CmisSync.Lib.Cmis
         /// </summary>
         public void RemoveFileNormalized(string path)
         {
-            path = Normalize(path);
-
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters.Add("path", path);
             ExecuteSQLAction("DELETE FROM files WHERE path=@path", parameters);
@@ -342,7 +339,6 @@ namespace CmisSync.Lib.Cmis
         public void RemoveFolder(string path)
         {
             path = Normalize(path);
-
             RemoveFolderNormalized(path);
         }
 
