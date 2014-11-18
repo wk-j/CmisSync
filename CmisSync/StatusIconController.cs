@@ -25,25 +25,6 @@ using System.Timers;
 namespace CmisSync
 {
     /// <summary>
-    /// State of the CmisSync status icon.
-    /// </summary>
-    public enum IconState
-    {
-        /// <summary>
-        /// Sync is idle.
-        /// </summary>
-        Idle,
-        /// <summary>
-        /// Sync is running.
-        /// </summary>
-        Syncing,
-        /// <summary>
-        /// Sync is in error state.
-        /// </summary>
-        Error
-    }
-
-    /// <summary>
     /// MVC controller for the CmisSync status icon.
     /// </summary>
     public class StatusIconController
@@ -71,7 +52,7 @@ namespace CmisSync
         /// <summary>
         /// Update menu event.
         /// </summary>
-        public delegate void UpdateMenuEventHandler(IconState state);
+        public delegate void UpdateMenuEventHandler(ActivityListenerAggregator.IconState state);
 
         /// <summary>
         /// Update status event.
@@ -106,7 +87,7 @@ namespace CmisSync
         /// <summary>
         /// Current state of the CmisSync tray icon.
         /// </summary>
-        public IconState CurrentState = IconState.Idle;
+        public ActivityListenerAggregator.IconState CurrentState = ActivityListenerAggregator.IconState.Idle;
 
         /// <summary>
         /// Short text shown at the top of the menu of the CmisSync tray icon.
@@ -195,9 +176,9 @@ namespace CmisSync
             // A remote folder has been added.
             Program.Controller.FolderListChanged += delegate
             {
-                if (CurrentState != IconState.Error)
+                if (CurrentState != ActivityListenerAggregator.IconState.Error)
                 {
-                    CurrentState = IconState.Idle;
+                    CurrentState = ActivityListenerAggregator.IconState.Idle;
 
                     if (Program.Controller.Folders.Count == 0)
                         StateText = Properties_Resources.Welcome;
@@ -206,16 +187,16 @@ namespace CmisSync
                 }
 
                 UpdateStatusItemEvent(StateText);
-                UpdateIconEvent(CurrentState == IconState.Error ? -1 : 0);
+                UpdateIconEvent(CurrentState == ActivityListenerAggregator.IconState.Error ? -1 : 0);
                 UpdateMenuEvent(CurrentState);
             };
 
             // No more download/upload.
             Program.Controller.OnIdle += delegate
             {
-                if (CurrentState != IconState.Error)
+                if (CurrentState != ActivityListenerAggregator.IconState.Error)
                 {
-                    CurrentState = IconState.Idle;
+                    CurrentState = ActivityListenerAggregator.IconState.Idle;
 
                     if (Program.Controller.Folders.Count == 0)
                         StateText = Properties_Resources.Welcome;
@@ -228,14 +209,14 @@ namespace CmisSync
                 this.animation.Stop();
 
 //NOTGDS2: begin
-                UpdateIconEvent(CurrentState == IconState.Error ? -1 : 0);
+                UpdateIconEvent(CurrentState == ActivityListenerAggregator.IconState.Error ? -1 : 0);
                 UpdateMenuEvent(CurrentState);
             };
 
             // Syncing.
             Program.Controller.OnSyncing += delegate
             {
-                CurrentState = IconState.Syncing;
+                CurrentState = ActivityListenerAggregator.IconState.Syncing;
                 StateText = Properties_Resources.SyncingChanges;
 
                 UpdateStatusItemEvent(StateText);
@@ -250,8 +231,8 @@ namespace CmisSync
 
                 string message = String.Format(Properties_Resources.SyncError, error.Item1, error.Item2.Message);
 
-                IconState PreviousState = CurrentState;
-                CurrentState = IconState.Error;
+                ActivityListenerAggregator.IconState PreviousState = CurrentState;
+                CurrentState = ActivityListenerAggregator.IconState.Error;
                 StateText = message;
 
                 UpdateStatusItemEvent(StateText);
@@ -267,7 +248,7 @@ namespace CmisSync
                     SuspendSyncClicked(error.Item1);
                 }
 
-                if (PreviousState != IconState.Error)
+                if (PreviousState != ActivityListenerAggregator.IconState.Error)
                 {
                     Program.Controller.ShowAlert(Properties_Resources.Error, message);
                 }
@@ -275,7 +256,7 @@ namespace CmisSync
 
             Program.Controller.OnErrorResolved += delegate
             {
-                CurrentState = IconState.Idle;
+                CurrentState = ActivityListenerAggregator.IconState.Idle;
 //NOTGDS2: end
 // GDS2:
 /*

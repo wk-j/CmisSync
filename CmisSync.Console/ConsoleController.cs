@@ -34,7 +34,7 @@ namespace CmisSync.Console
         /// <summary>
         /// Activity error occured.
         /// </summary>
-        public void ActivityError(Tuple<string, Exception> error)
+        public void ErrorOccurred(Tuple<string, Exception> error)
         {
             System.Console.WriteLine(String.Format("Could not sync '{0}': {1}", error.Item1, error.Item2.Message));
         }

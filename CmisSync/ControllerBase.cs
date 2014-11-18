@@ -551,7 +551,7 @@ namespace CmisSync
         /// <summary>
         /// Error occured.
         /// </summary>
-        public void ActivityError(Tuple<string, Exception> error)
+        public void ErrorOccurred(Tuple<string, Exception> error)
         {
             OnError(error);
         }

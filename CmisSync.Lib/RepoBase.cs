@@ -444,7 +444,7 @@ namespace CmisSync.Lib
         public void OnSyncError(Exception exception)
         {
             Logger.Info("Sync Error: " + exception.GetType() + ", " + exception.Message);
-            activityListener.ActivityError(new Tuple<string, Exception>(Name, exception));
+            activityListener.ErrorOccurred(new Tuple<string, Exception>(Name, exception));
         }
 
 
