@@ -49,6 +49,12 @@
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Aegif_CmisSync.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\Extras\OpenDataSpaceDotCMIS\Newtonsoft.Json.dll</HintPath>
@@ -122,6 +128,9 @@
       <Project>{529EF90F-A34C-4426-A4F9-65113AC23841}</Project>
       <Name>DotCMIS</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Aegif_CmisSync.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
