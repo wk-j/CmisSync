@@ -97,6 +97,7 @@ namespace CmisSync.Lib
             get;
         }
 
+
         /// <summary>
         /// Whether the file exists locally.
         /// </summary>

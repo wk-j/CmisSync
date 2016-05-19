@@ -242,27 +242,7 @@ namespace CmisSync.Lib.Sync
 
                                 activityListener.ActivityStarted();
 
-                                // Delete the folder from the remote server.
-                                try
-                                {
-                                    Logger.Debug("Removing remote folder tree: " + remoteSubFolder.Path);
-                                    IList<string> failedIDs = remoteSubFolder.DeleteTree(true, null, true);
-                                    if (failedIDs == null || failedIDs.Count != 0)
-                                    {
-                                        Logger.Error("Failed to completely delete remote folder " + remoteSubFolder.Path);
-                                        // TODO Should we retry? Maybe at least once, as a manual recursion instead of a DeleteTree.
-                                    }
-                                }
-                                catch (CmisPermissionDeniedException e)
-                                {
-                                    // We don't have the permission to delete this folder. Warn and recreate it.
-                                    Utils.NotifyUser("You don't have the necessary permissions to delete folder " + remoteSubFolder.Path
-                                        + "\nIf you feel you should be able to delete it, please contact your server administrator");
-                                    RecursiveFolderCopy(remoteSubFolder, remotePath, subFolderItem.LocalPath);
-                                }
-
-                                // Delete the folder from database.
-                                database.RemoveFolder(subFolderItem);
+                                DeleteRemoteFolder(remoteSubFolder, subFolderItem, remotePath);
 
                                 activityListener.ActivityStopped();
                             }
@@ -395,7 +375,7 @@ namespace CmisSync.Lib.Sync
                         // In such a case, we should abort this synchronization rather than delete the remote file.
                         if ( ! Directory.Exists(repoInfo.TargetDirectory))
                         {
-                            throw new Exception("Local folder has disappeared: " + repoInfo.TargetDirectory + " , aborting synchronization");
+                            throw new Exception("Local target directory has disappeared: " + repoInfo.TargetDirectory + " , aborting synchronization");
                         }
 
                         if (database.ContainsLocalFile(syncItem.LocalRelativePath))
@@ -404,27 +384,7 @@ namespace CmisSync.Lib.Sync
                             // So, it must have been deleted locally by the user.
                             // Thus, CmisSync must remove the file from the server too.
 
-                            string message0 = "CmisSync Warning: You have deleted file " + syncItem.LocalPath + "\nCmisSync will now delete it from the server. If you actually did not delete this file, please report a bug at CmisSync@aegif.jp";
-                            Logger.Info(message0);
-                            //Utils.NotifyUser(message0);
-
-                            if ((bool)remoteDocument.IsVersionSeriesCheckedOut)
-                            {
-                                string message = String.Format("File {0} is checked out on the server by another user: {1}", syncItem.LocalPath, remoteDocument.CheckinComment);
-                                Logger.Info(message);
-                                Utils.NotifyUser(message);
-                            }
-                            else
-                            {
-                                // File has been recently removed locally, so remove it from server too.
-
-                                activityListener.ActivityStarted();
-                                Logger.Info("Removing locally deleted file on server: " + syncItem.RemotePath);
-                                remoteDocument.DeleteAllVersions();
-                                // Remove it from database.
-                                database.RemoveFile(syncItem);
-                                activityListener.ActivityStopped();
-                            }
+                            DeleteRemoteDocument(remoteDocument, syncItem);
                         }
                         else
                         {

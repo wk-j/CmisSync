@@ -1120,13 +1120,42 @@ namespace CmisSync.Lib.Database
         /// </summary>
         /// <returns><c>true</c>, if folder identifier was containsed, <c>false</c> otherwise.</returns>
         /// <param name="path">Path.</param>
-        public bool ContainsFolderId(string path)
+        public bool ContainsLocalPath(string localPath)
         {
-            path = RemoveLocalPrefix(path);
+            localPath = RemoveLocalPrefix(localPath);
             var parameters = new Dictionary<string, object>();
-            parameters.Add("@path", path);
-            return null != ExecuteSQLFunction("SELECT id FROM folders WHERE path = @path;", parameters);
+            parameters.Add("@localPath", localPath);
+            return null != ExecuteSQLFunction("SELECT id FROM folders WHERE localPath = @localPath;", parameters);
         }
+
+
+        public List<string> GetLocalFolders()
+        {
+            var folders = new List<string>();
+            SQLiteCommand command = new SQLiteCommand("SELECT localPath FROM folders;", GetSQLiteConnection());
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                string folder = (string)reader["localPath"];
+                folders.Add(folder);
+            }
+            return folders;
+        }
+
+
+        public List<ChecksummedFile> GetChecksummedFiles()
+        {
+            List<ChecksummedFile> result = new List<ChecksummedFile>();
+            SQLiteCommand command = new SQLiteCommand("SELECT path, checksum FROM files;", GetSQLiteConnection());
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                ChecksummedFile file = new ChecksummedFile((string)reader["path"], (string)reader["checksum"]);
+                result.Add(file);
+            }
+            return result;
+        }
+
 
         /// <summary>
         /// Helper method to execute an SQL command that does not return anything.
@@ -1252,6 +1281,36 @@ namespace CmisSync.Lib.Database
                 default:
                     return "";
             }
+        }
+    }
+
+
+    /// <summary>
+    /// A file and its checksum.
+    /// </summary>
+    public class ChecksummedFile
+    {
+        /// <summary>
+        /// Path to the file, relative to the root of the synchronized folder.
+        /// </summary>
+        public string RelativePath { get; private set; }
+
+        /// <summary>
+        /// Checksum stored in the local database for that file.
+        /// Thus it is the checksum of the file after the previous synchronization.
+        /// </summary>
+        private string checksum;
+
+        public ChecksummedFile(string relativePath, string checksum)
+        {
+            this.RelativePath = relativePath;
+            this.checksum = checksum;
+        }
+
+        public bool HasChanged(string rootFolder)
+        {
+            string newChecksum = Database.Checksum(Utils.PathCombine(rootFolder, RelativePath));
+            return ! newChecksum.Equals(checksum);
         }
     }
 }

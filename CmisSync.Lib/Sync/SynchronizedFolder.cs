@@ -425,8 +425,14 @@ namespace CmisSync.Lib.Sync
 
                     if (firstSync)
                     {
-                        Logger.Debug("First sync, invoke a full crawl sync");
-                        CrawlSyncAndUpdateChangeLogToken(remoteFolder, remoteFolderPath, localFolder);
+                        Logger.Debug("First sync, apply local changes then invoke a full crawl sync");
+                        
+                        // Compare local files with local database and apply changes to the server.
+                        ApplyLocalChanges(localFolder);
+
+                        // Full sync.
+                        CrawlSync(remoteFolder, remoteFolderPath, localFolder);
+                        
                         firstSync = false;
                     }
                     else
@@ -435,6 +441,10 @@ namespace CmisSync.Lib.Sync
                         bool locallyModified = WatcherSync(remoteFolderPath, localFolder);
                         if (locallyModified)
                         {
+                            // First compare local files with local database and apply changes to the server.
+                            // The goal of doing this before CrawlSync is that changes get uploaded earlier.
+                            ApplyLocalChanges(localFolder);
+
                             CrawlSyncAndUpdateChangeLogToken(remoteFolder, remoteFolderPath, localFolder);
                         }
 
@@ -1111,7 +1121,7 @@ namespace CmisSync.Lib.Sync
             /// Upload folder recursively.
             /// After execution, the hierarchy on server will be: .../remoteBaseFolder/localFolder/...
             /// </summary>
-            private bool UploadFolderRecursively(IFolder remoteBaseFolder, string localFolder)
+            private bool UploadFolderRecursively(IFolder remoteBaseFolder, string localFolder) // TODO switch order of argument for consistency with methods above and below
             {
                 bool success = true;
                 SleepWhileSuspended();
@@ -1193,7 +1203,7 @@ namespace CmisSync.Lib.Sync
                 }
                 catch (Exception e)
                 {
-                    ProcessRecoverableException("Could not uploading folder: " + localFolder, e);
+                    ProcessRecoverableException("Could not upload folder: " + localFolder, e);
                     return false;
                 }
                 return success;
@@ -1203,24 +1213,24 @@ namespace CmisSync.Lib.Sync
             /// <summary>
             /// Upload new version of file.
             /// </summary>
-            private bool UpdateFile(string filePath, IDocument remoteFile)
+            private bool UpdateFile(string localFilePath, IDocument remoteFile)
             {
                 SleepWhileSuspended();
                 try
                 {
-                    var syncItem = database.GetSyncItemFromLocalPath(filePath);
+                    var syncItem = database.GetSyncItemFromLocalPath(localFilePath);
                     if (null == syncItem)
                     {
-                        syncItem = SyncItemFactory.CreateFromLocalPath(filePath, false, repoInfo, database);
+                        syncItem = SyncItemFactory.CreateFromLocalPath(localFilePath, false, repoInfo, database);
                     }
 
                     Logger.Info("Updating: " + syncItem.LocalPath);
-                    using (Stream localfile = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (Stream localfile = File.Open(localFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
                         // Ignore files with null or empty content stream.
                         if ((localfile == null) && (localfile.Length == 0))
                         {
-                            Logger.Info("Skipping update of file with null or empty content stream: " + filePath);
+                            Logger.Info("Skipping update of file with null or empty content stream: " + localFilePath);
                             return true;
                         }
 
@@ -1278,7 +1288,7 @@ namespace CmisSync.Lib.Sync
                 }
                 catch (Exception e)
                 {
-                    ProcessRecoverableException("Could not update file: " + filePath, e);
+                    ProcessRecoverableException("Could not update file: " + localFilePath, e);
                     return false;
                 }
             }
@@ -1327,6 +1337,61 @@ namespace CmisSync.Lib.Sync
                     ProcessRecoverableException("Could not update file: " + filePath, e);
                     return false;
                 }
+            }
+
+
+            public void DeleteRemoteDocument(IDocument document, SyncItem syncItem)
+            {
+                string message0 = "CmisSync Warning: You have deleted file " + syncItem.LocalPath + "\nCmisSync will now delete it from the server. If you actually did not delete this file, please report a bug at CmisSync@aegif.jp";
+                Logger.Info(message0);
+                //Utils.NotifyUser(message0);
+
+                if (document.IsVersionSeriesCheckedOut != null
+                    && (bool)document.IsVersionSeriesCheckedOut)
+                {
+                    string message = String.Format("File {0} is checked out on the server by another user: {1}", syncItem.LocalPath, document.CheckinComment);
+                    Logger.Info(message);
+                    Utils.NotifyUser(message);
+                }
+                else
+                {
+                    // File has been recently removed locally, so remove it from server too.
+
+                    activityListener.ActivityStarted();
+                    Logger.Info("Removing locally deleted file on server: " + syncItem.RemotePath);
+                    document.DeleteAllVersions();
+                    // Remove it from database.
+                    database.RemoveFile(syncItem);
+                    activityListener.ActivityStopped();
+                }
+            }
+
+
+            /// <summary>
+            /// Delete the folder from the remote server.
+            /// </summary>
+            public void DeleteRemoteFolder(IFolder folder, SyncItem syncItem, string upperFolderPath)
+            {
+                try
+                {
+                    Logger.Debug("Removing remote folder tree: " + folder.Path);
+                    IList<string> failedIDs = folder.DeleteTree(true, null, true);
+                    if (failedIDs == null || failedIDs.Count != 0)
+                    {
+                        Logger.Error("Failed to completely delete remote folder " + folder.Path);
+                        // TODO Should we retry? Maybe at least once, as a manual recursion instead of a DeleteTree.
+                    }
+                }
+                catch (CmisPermissionDeniedException e)
+                {
+                    // We don't have the permission to delete this folder. Warn and recreate it.
+                    Utils.NotifyUser("You don't have the necessary permissions to delete folder " + folder.Path
+                        + "\nIf you feel you should be able to delete it, please contact your server administrator");
+                    RecursiveFolderCopy(folder, upperFolderPath, syncItem.LocalPath);
+                }
+
+                // Delete the folder from database.
+                database.RemoveFolder(syncItem);
             }
 
 
