@@ -70,7 +70,6 @@
   <ItemGroup>
     <Compile Include="CmisDatabaseTest.cs" />
     <Compile Include="CmisSyncLibUtilsTest.cs" />
-    <Compile Include="CmisSyncTests.cs" />
     <Compile Include="ConfigurationTest.cs" />
     <Compile Include="EncodingTest.cs" />
     <Compile Include="LocalFilesystemActivityGenerator.cs" />
